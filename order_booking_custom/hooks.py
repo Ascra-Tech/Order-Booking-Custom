@@ -243,6 +243,13 @@ app_license = "mit"
 # }
 
 fixtures = [
+    {"dt": "Client Script", "filters": [
+        [
+            "dt", "in", [
+				"Order Booking Form","Quality Inspection","Stock Entry"
+            ]
+        ]
+    ]},
     {"dt": "Print Format", "filters": [
         [
             "module", "in", [
