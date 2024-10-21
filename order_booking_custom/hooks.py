@@ -246,7 +246,7 @@ fixtures = [
     {"dt": "Client Script", "filters": [
         [
             "dt", "in", [
-				"Order Booking Form","Quality Inspection","Stock Entry"
+				"Order Booking Form","Quality Inspection","Stock Entry","Sales Order"
             ]
         ]
     ]},
