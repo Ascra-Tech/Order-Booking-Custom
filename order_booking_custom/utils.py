@@ -92,7 +92,7 @@ def create_serial_no(self, method=None):
 @frappe.whitelist()
 def create_purchase_order(name=None):
     try:
-        create_stock_entry(name)
+        # create_stock_entry(name)
         make_purchase_order(source_name=name, target_doc=None)
         create_work_order(name)
     except Exception as e:
