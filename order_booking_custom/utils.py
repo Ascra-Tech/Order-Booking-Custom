@@ -12,25 +12,25 @@ from frappe.utils import cint, cstr, flt, get_link_to_form
 import frappe
 
 @frappe.whitelist(allow_guest=True)
-def get_work_order_status(sales_order):
+def get_work_order_status(sales_order,item_code,serial_no):
     # Initialize an empty dictionary to store item statuses
     work_order_status = {}
 
     # Fetch the sales order items
     sales_order_doc = frappe.get_doc('Sales Order', sales_order)
     
-    for item in sales_order_doc.items:
+    # for item in sales_order_doc.items:
         # Assuming there's a link between Sales Order item and Work Order, and Work Order has a status field
         # You may need to adjust this logic based on your data model
-        work_order = frappe.db.get_value('Work Order', {'production_item': item.item_code, 'sales_order': sales_order,"custom_serial_no":item.serial_no}, 'status')
-        custom_serial_no = frappe.db.get_value('Work Order', {'production_item': item.item_code, 'sales_order': sales_order,"custom_serial_no":item.serial_no}, 'custom_serial_no')
-        
-        if work_order:
-            work_order_status[item.item_code] = work_order
-            work_order_status[item.serial_no] = custom_serial_no
-        else:
-            work_order_status[item.item_code] = 'No Work Order'
-            work_order_status[item.serial_no] = custom_serial_no
+    work_order = frappe.db.get_value('Work Order', {'production_item': item_code, 'sales_order': sales_order,"custom_serial_no":serial_no}, 'status')
+    custom_serial_no = frappe.db.get_value('Work Order', {'production_item': item_code, 'sales_order': sales_order,"custom_serial_no":serial_no}, 'custom_serial_no')
+    
+    if work_order:
+        work_order_status[item_code] = work_order
+        work_order_status[serial_no] = custom_serial_no
+    else:
+        work_order_status[item_code] = 'No Work Order'
+        work_order_status[serial_no] = custom_serial_no
 
     # Return the status as a dictionary with item codes and statuses
     return work_order_status
