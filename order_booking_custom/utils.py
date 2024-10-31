@@ -378,7 +378,7 @@ def make_work_orders(name=None, project=None):
     frappe.db.set_value(
         "Order Booking Form", name, "work_order", str([p.name for p in out])
     )
-    frappe.msgprint("Work Orders Created")
+    # frappe.msgprint("Work Orders Created")
     if out:
         process_work_orders(out)
     # frappe.db.commit()
