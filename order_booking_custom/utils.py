@@ -333,41 +333,46 @@ def make_work_orders(name=None, project=None):
 
     for i in items:
         try:
-            if not i.get("bom"):
-                frappe.throw(
-                    _("Please select BOM against item {0}").format(i.get("item_code"))
-                )
-            # if not i.get("pending_qty"):
-            # 	frappe.throw(_("Please select Qty against item {0}").format(i.get("item_code")))
+            wo=frappe.db.get_value("Work Order",{"production_item":i.get("item_code"),"custom_order_booking":doc.name},"name")
+            if not wo:
+                if not i.get("bom"):
+                    frappe.throw(
+                        _("Please select BOM against item {0}").format(i.get("item_code"))
+                    )
+                # if not i.get("pending_qty"):
+                # 	frappe.throw(_("Please select Qty against item {0}").format(i.get("item_code")))
 
-            work_order = frappe.get_doc(
-                dict(
-                    doctype="Work Order",
-                    production_item=i.get("item_code"),
-                    bom_no=i.get("bom"),
-                    qty=1,
-                    company=company,
-                    custom_purchase_order=doc.custom_purchase_order,
-                    # sales_order_item=i.get("name"),
-                    serial_no=i.get("tyre_serial_number"),
-                    custom_order_booking=doc.name,
-                    wip_warehouse=i.get("wip_warehouse"),
-                    source_warehouse=i.get("source_warehouse"),
-                    project=project,
-                    fg_warehouse=frappe.db.get_value(
-                        "Item Default",
-                        {"company": company, "parent": i.get("item_code")},
-                        "default_warehouse",
-                    ),
-                    description=frappe.db.get_value(
-                        "Item", i.get("item_code"), "description"
-                    ),
-                )
-            ).insert()
-            work_order.set_work_order_operations()
-            work_order.flags.ignore_mandatory = True
-            work_order.save()
-            out.append(work_order)
+                work_order = frappe.get_doc(
+                    dict(
+                        doctype="Work Order",
+                        production_item=i.get("item_code"),
+                        bom_no=i.get("bom"),
+                        qty=1,
+                        company=company,
+                        custom_purchase_order=doc.custom_purchase_order,
+                        # sales_order_item=i.get("name"),
+                        serial_no=i.get("tyre_serial_number"),
+                        custom_order_booking=doc.name,
+                        wip_warehouse=i.get("wip_warehouse"),
+                        source_warehouse=i.get("source_warehouse"),
+                        project=project,
+                        fg_warehouse=frappe.db.get_value(
+                            "Item Default",
+                            {"company": company, "parent": i.get("item_code")},
+                            "default_warehouse",
+                        ),
+                        description=frappe.db.get_value(
+                            "Item", i.get("item_code"), "description"
+                        ),
+                    )
+                ).insert()
+                work_order.set_work_order_operations()
+                work_order.flags.ignore_mandatory = True
+                work_order.save()
+                out.append(work_order)
+            else:
+                frappe.msgprint(f"Work Order Already Created Successfully {wo}")
+
         except Exception as e:
             frappe.log_error("Error Response",e)
     frappe.db.set_value(
