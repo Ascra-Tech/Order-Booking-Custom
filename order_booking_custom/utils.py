@@ -23,11 +23,14 @@ def get_work_order_status(sales_order):
         # Assuming there's a link between Sales Order item and Work Order, and Work Order has a status field
         # You may need to adjust this logic based on your data model
         work_order = frappe.db.get_value('Work Order', {'production_item': item.item_code, 'sales_order': sales_order,"custom_serial_no":item.serial_no}, 'status')
+        custom_serial_no = frappe.db.get_value('Work Order', {'production_item': item.item_code, 'sales_order': sales_order,"custom_serial_no":item.serial_no}, 'custom_serial_no')
         
         if work_order:
             work_order_status[item.item_code] = work_order
+            work_order_status[item.serial_no] = custom_serial_no
         else:
             work_order_status[item.item_code] = 'No Work Order'
+            work_order_status[item.serial_no] = custom_serial_no
 
     # Return the status as a dictionary with item codes and statuses
     return work_order_status
@@ -159,11 +162,12 @@ def _make_purchase_order(source_name, target_doc=None, ignore_permissions=False)
         doclist.insert()
         doclist.submit()
         if doclist.name:
-            make_purchase_receipt(source_name=doclist.name,target_doc=None)
-            frappe.msgprint(f"Purchase Order Order Created Successfully {doclist.name}")
             frappe.db.set_value(
                 "Order Booking Form", source_name, "custom_purchase_order", doclist.name
             )
+            make_purchase_receipt(source_name=doclist.name,target_doc=None)
+            frappe.msgprint(f"Purchase Order Order Created Successfully {doclist.name}")
+            
         return doclist
     else:
         frappe.msgprint(
