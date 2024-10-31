@@ -22,7 +22,7 @@ def get_work_order_status(sales_order):
     for item in sales_order_doc.items:
         # Assuming there's a link between Sales Order item and Work Order, and Work Order has a status field
         # You may need to adjust this logic based on your data model
-        work_order = frappe.db.get_value('Work Order', {'production_item': item.item_code, 'sales_order': sales_order}, 'status')
+        work_order = frappe.db.get_value('Work Order', {'production_item': item.item_code, 'sales_order': sales_order,"custom_serial_no":item.serial_no}, 'status')
         
         if work_order:
             work_order_status[item.item_code] = work_order
