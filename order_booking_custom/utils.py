@@ -30,13 +30,13 @@ def get_work_order_status(sales_order,item_code,serial_no):
         work_order_status["serial_no"] = custom_serial_no
         work_order_status["status"] = work_order
         sales_order_item_name=frappe.db.get_value("Sales Order Item",{"item_code":item_code,"serial_no":serial_no},"name")
-        frappe.db.set_value("Sales Order Item",sales_order_item_name,"status",work_order)
+        frappe.db.set_value("Sales Order Item",sales_order_item_name,"custom_status",work_order)
     else:
         work_order_status["item_code"] = item_code
         work_order_status["serial_no"] = custom_serial_no
         work_order_status["status"] = "No Work Order"
         sales_order_item_name=frappe.db.get_value("Sales Order Item",{"item_code":item_code,"serial_no":serial_no},"name")
-        frappe.db.set_value("Sales Order Item",sales_order_item_name,"status","No Work Order")
+        frappe.db.set_value("Sales Order Item",sales_order_item_name,"custom_status","No Work Order")
         
 
     # Return the status as a dictionary with item codes and statuses
