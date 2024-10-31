@@ -24,7 +24,7 @@ def get_work_order_status(sales_order,item_code,serial_no):
         # You may need to adjust this logic based on your data model
     work_order = frappe.db.get_value('Work Order', {'production_item': item_code, 'sales_order': sales_order,"custom_serial_no":serial_no}, 'status')
     custom_serial_no = frappe.db.get_value('Work Order', {'production_item': item_code, 'sales_order': sales_order,"custom_serial_no":serial_no}, 'custom_serial_no')
-    
+    frappe.log_error(str(custom_serial_no),str(work_order))
     if work_order:
         work_order_status["item_code"] = item_code
         work_order_status["serial_no"] = custom_serial_no
@@ -37,6 +37,8 @@ def get_work_order_status(sales_order,item_code,serial_no):
         work_order_status["status"] = "No Work Order"
         sales_order_item_name=frappe.db.get_value("Sales Order Item",{"item_code":item_code,"serial_no":serial_no},"name")
         frappe.db.set_value("Sales Order Item",sales_order_item_name,"custom_status","No Work Order")
+
+    frappe.msgprint('Work order statuses updated successfully.')
         
 
     # Return the status as a dictionary with item codes and statuses
