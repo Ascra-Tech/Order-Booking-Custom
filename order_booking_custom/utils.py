@@ -334,7 +334,7 @@ def make_work_orders(name=None, project=None):
     for i in items:
         try:
             wo=frappe.db.get_value("Work Order",{"production_item":i.get("item_code"),"custom_order_booking":doc.name},"name")
-            if not wo:
+            if not wo or frappe.db.get_value("Work Order",wo,"docstatus") == 2:
                 if not i.get("bom"):
                     frappe.throw(
                         _("Please select BOM against item {0}").format(i.get("item_code"))
@@ -395,4 +395,133 @@ def process_work_orders(out):
             frappe.log_error(f"Error Response from Work Order {p.name}  ", str(e))
             # # Raise the exception to indicate failure
             # raise e
+
+
+@frappe.whitelist()
+def update_stock_entry_ob(self, method=None):
+    update_child_table_and_reverse_stock_entry(self)
+def update_child_table_and_reverse_stock_entry(self):
+    process_stock_entry(self,self.stock_entry)
+    
+
+
+def process_stock_entry(self,stock_entry):
+    if not self.customer_name:
+        return
+
+    stock_entry=frappe.get_doc("Stock Entry",stock_entry)
+    """
+    Process a Stock Entry to:
+    1. Identify missing items and create a Material Receipt.
+    2. Identify replaced items by matching stock_entry items with missing items and create a Material Issue.
+    """
+    # Fetch existing items from stock_entry
+    existing_items = {d.item_code: d.qty for d in frappe.get_all(
+        "Stock Entry Detail",
+        filters={"parent": stock_entry.name},
+        fields=["item_code","qty"]
+    )}
+
+    obd = {d.item_code: d.qty for d in frappe.get_all(
+        "Order Booking Details",
+        filters={"parent": self.name},
+        fields=["item_code", "qty"]
+    )}
+
+    valid_item=frappe.get_all(
+        "Stock Entry Detail",
+        filters={"parent": stock_entry.name},
+        fields=["item_code","qty"])
+
+    
+    
+
+    
+    
+    missing_items = []
+    replaced_items=[]
+
+    # Step 1: Identify missing items
+    for item in self.order_booking_details:
+        if item.item_code not in existing_items:
+            missing_items.append(item)
+
+
+    for item in valid_item:
+        if item.item_code not in obd:
+            replaced_items.append(item)
+
+    frappe.log_error("Missing Item",str(missing_items))
+    frappe.log_error("obd Item",str(obd))
+    frappe.log_error("existing_items Item",str(valid_item))
+    frappe.log_error("replaced_items Item",str(replaced_items))
+
+    # Create Material Receipt for missing items
+    if replaced_items:
+        create_material_issue(self,replaced_items)
+    if missing_items:
+        create_material_receipt(self,missing_items)
+
+    # # Create Material Issue for replaced items
+    
+
+def create_material_receipt(self,missing_items):
+    """
+    Create a Material Receipt for the missing items.
+    """
+    
+    material_receipt = frappe.new_doc("Stock Entry")
+    material_receipt.stock_entry_type = "Material Receipt"
+    
+    for item in missing_items:
+        # if not frappe.db.get_value("Stock Entry Detail",{"item_code":item.item_code,})
+        material_receipt.append("items", {
+            "item_code": item.item_code,
+            "qty": 1,
+            "uom": frappe.db.get_value(
+                "Item", item.get("item_code"), "stock_uom"
+            ),
+            "t_warehouse": item.target_warehouse_se,
+            "allow_zero_valuation_rate":1,
+            "conversion_factor":1,
+            # "serial_no":item.tyre_serial_number
+        })
+    material_receipt.insert()
+    material_receipt.submit()
+    if material_receipt.name:
+        for item in missing_items:
+            row_name=frappe.db.get_value("Order Booking Details",{"item_code":item.item_code,"parent":self.name},"name")
+            if row_name:
+                frappe.db.set_value("Order Booking Details",row_name,{"custom_stock_entry":material_receipt.name})
+        frappe.msgprint(f"Material Receipt {material_receipt.name} created.")
+
+
+def create_material_issue(self,replaced_items):
+    """
+    Create a Material Issue for the replaced items.
+    """
+    material_issue = frappe.new_doc("Stock Entry")
+    material_issue.stock_entry_type = "Material Issue"
+    for item in replaced_items:
+        material_issue.append("items", {
+            "item_code": item.item_code,
+            "qty": 1,
+            "uom": frappe.db.get_value(
+                "Item", item.get("item_code"), "stock_uom"
+            ),
+            "s_warehouse": frappe.db.get_value("Stock Entry Detail",{"item_code":item.item_code,"parent":self.stock_entry},"t_warehouse"),
+            "allow_zero_valuation_rate":1,
+            "conversion_factor":1,
+            # "serial_no":frappe.db.get_value("Stock Entry Detail",{"item_code":item.item_code,"parent":self.stock_entry},"serial_no")
+        })
+
+    frappe.log_error("material_issue",material_issue.as_dict())
+    material_issue.insert()
+    material_issue.submit()
+    if material_issue.name:
+        for item in replaced_items:
+            row_name=frappe.db.get_value("Order Booking Details",{"item_code":item.item_code,"parent":self.name},"name")
+            if row_name:
+                frappe.db.set_value("Order Booking Details",row_name,{"custom_stock_entry":material_issue.name})
+        frappe.msgprint(f"Material Issue {material_issue.name} created.")
 

@@ -137,13 +137,12 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Order Booking Form": {
+		"on_update_after_submit": ["order_booking_custom.update_serial_no_item.update_serial_no_on_item_change",
+                            "order_booking_custom.utils.update_stock_entry_ob","order_booking_custom.reverse_pr.create_reverse_pr"]
+	}
+}
 
 # Scheduled Tasks
 # ---------------
@@ -247,6 +246,13 @@ fixtures = [
         [
             "dt", "in", [
 				"Order Booking Form","Quality Inspection","Stock Entry","Sales Order"
+            ]
+        ]
+    ]},
+    {"dt": "Server Script", "filters": [
+        [
+            "module", "in", [
+				"Order Booking Form"
             ]
         ]
     ]},
