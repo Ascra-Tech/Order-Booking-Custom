@@ -487,7 +487,7 @@ def create_material_receipt(self,missing_items):
             # "serial_no":item.tyre_serial_number
         })
     material_receipt.insert()
-    material_receipt.submit()
+    # material_receipt.submit()
     if material_receipt.name:
         for item in missing_items:
             row_name=frappe.db.get_value("Order Booking Details",{"item_code":item.item_code,"parent":self.name},"name")
