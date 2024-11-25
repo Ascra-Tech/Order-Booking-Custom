@@ -451,16 +451,12 @@ def process_stock_entry(self,stock_entry):
         if item.item_code not in obd:
             replaced_items.append(item)
 
-    frappe.log_error("Missing Item",str(missing_items))
-    frappe.log_error("obd Item",str(obd))
-    frappe.log_error("existing_items Item",str(valid_item))
-    frappe.log_error("replaced_items Item",str(replaced_items))
 
     # Create Material Receipt for missing items
-    if replaced_items:
-        create_material_issue(self,replaced_items)
-    if missing_items:
-        create_material_receipt(self,missing_items)
+    # if replaced_items:
+    #     create_material_issue(self,replaced_items)
+    # if missing_items:
+    #     create_material_receipt(self,missing_items)
 
     # # Create Material Issue for replaced items
     
@@ -528,17 +524,28 @@ def create_material_issue(self,replaced_items):
 @frappe.whitelist()
 def delete_so_item(doc,method=None):
     if doc.production_item and doc.custom_serial_no and doc.sales_order:
-        get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
-        frappe.log_error("get_item",get_item)
-        if get_item:
-            
-            frappe.db.delete("Sales Order Item", {"name": get_item})
-            frappe.db.commit()
+        get_obf=frappe.get_doc("Order Booking Form",doc.custom_order_booking)
+        if len(get_obf.order_booking_details) == 1:
+            frappe.db.delete("Sales Order", {"name": get_obf.sales_order})
+            frappe.db.set_value("Order Booking Form",doc.custom_order_booking,"sales_order","")
+        else:
+            get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
+            frappe.log_error("get_item",get_item)
+            if get_item:
+                
+                frappe.db.delete("Sales Order Item", {"name": get_item})
+                frappe.db.commit()
     # Generate a unique name for the child row
 
 @frappe.whitelist()
 def update_item_so(doc,method=None):
-    if doc.production_item and doc.custom_serial_no and doc.sales_order:
+    if doc.production_item and doc.custom_serial_no and doc.sales_order and not doc.is_new():
+        # get_obf=frappe.get_doc("Order Booking Form",doc.custom_order_booking_form)
+        # if len(get_obf.order_booking_details) == 1:
+        #     frappe.db.delete("Sales Order", {"name": get_obf.sales_order})
+        #     frappe.db.set_value("Order Booking Form",doc.custom_order_booking_form,"sales_order","")
+        
+        # else:
         get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
         if not get_item:
         # Generate a unique name for the child row
@@ -567,10 +574,10 @@ def update_item_so(doc,method=None):
                 "idx": frappe.db.count("Sales Order Item", filters={"parent": doc.sales_order}) + 1,  # Row index
             }
         
-        # # Insert the row into the child doctype table
-        child_doc=frappe.get_doc(child_row)
-        child_doc.insert()
-        frappe.db.commit()
+            # # Insert the row into the child doctype table
+            child_doc=frappe.get_doc(child_row)
+            child_doc.insert()
+            frappe.db.commit()
     
         # # Optionally, save changes to the parent document
         # frappe.get_doc("Sales Order", parent_name).save()
