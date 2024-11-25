@@ -453,10 +453,10 @@ def process_stock_entry(self,stock_entry):
 
 
     # Create Material Receipt for missing items
-    # if replaced_items:
-    #     create_material_issue(self,replaced_items)
-    # if missing_items:
-    #     create_material_receipt(self,missing_items)
+    if replaced_items:
+        create_material_issue(self,replaced_items)
+    if missing_items:
+        create_material_receipt(self,missing_items)
 
     # # Create Material Issue for replaced items
     
@@ -528,6 +528,8 @@ def delete_so_item(doc,method=None):
         if len(get_obf.order_booking_details) > 0:
             frappe.db.delete("Sales Order", {"name": get_obf.sales_order})
             frappe.db.set_value("Order Booking Form",doc.custom_order_booking,"sales_order","")
+
+            
         # else:
         #     get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
         #     frappe.log_error("get_item",get_item)
