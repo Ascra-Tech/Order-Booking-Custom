@@ -176,6 +176,7 @@ def _make_purchase_order(source_name, target_doc=None, ignore_permissions=False)
             frappe.db.set_value(
                 "Order Booking Form", source_name, "custom_purchase_order", doclist.name
             )
+            create_work_order(name=source_name)
             make_purchase_receipt(source_name=doclist.name,target_doc=None)
             frappe.msgprint(f"Purchase Order Order Created Successfully {doclist.name}")
             
@@ -351,7 +352,8 @@ def make_work_orders(name=None, project=None):
                         company=company,
                         custom_purchase_order=doc.custom_purchase_order,
                         # sales_order_item=i.get("name"),
-                        serial_no=i.get("tyre_serial_number"),
+
+                        custom_serial_no=i.get("tyre_serial_number"),
                         custom_order_booking=doc.name,
                         wip_warehouse=i.get("wip_warehouse"),
                         source_warehouse=i.get("source_warehouse"),
@@ -370,8 +372,13 @@ def make_work_orders(name=None, project=None):
                 work_order.flags.ignore_mandatory = True
                 work_order.save()
                 out.append(work_order)
+
             else:
-                frappe.msgprint(f"Work Order Already Created Successfully {wo}")
+                name_wo=frappe.db.get_value("Work Order",{"production_item":i.get("item_code"),"custom_serial_no":i.get("tyre_serial_number"),"custom_order_booking":doc.name},"name")
+                if name_wo:
+                    frappe.db.set_value("Work Order",name_wo,"custom_purchase_order",doc.custom_purchase_order)
+                    frappe.msgprint(f"Work Order Already Created Successfully {wo}")
+
 
         except Exception as e:
             frappe.log_error("Error Response",e)

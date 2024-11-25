@@ -143,7 +143,8 @@ doc_events = {
                             "order_booking_custom.utils.update_stock_entry_ob"]
 	},
     "Work Order":{
-        "on_trash":"order_booking_custom.utils.delete_so_item",
+        "on_trash":["order_booking_custom.utils.delete_so_item","order_booking_custom.reverse_pr.cancel_trash_pr"],
+        "before_cancel":"order_booking_custom.reverse_pr.cancel_trash_pr"
         # "after_insert":"order_booking_custom.utils.update_item_so"
 
     }
