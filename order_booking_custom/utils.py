@@ -545,25 +545,35 @@ def update_item_so(doc,method=None):
             child_row_name = frappe.generate_hash(length=10)
             frappe.log_error("child_row_name",child_row_name)
         
-        # # Prepare the row data
-        # child_row = {
-        #     "name": child_row_name,
-        #     "parent": parent_name,
-        #     "parentfield": "items",  # This should match the child table fieldname in the parent doctype
-        #     "parenttype": parent_doctype,
-        #     "doctype": child_doctype,
-        #     "item_code": item_code,
-        #     "qty": qty,
-        #     "serial_no": serial_no,
-        #     "rate": rate,
-        #     "idx": frappe.db.count(child_doctype, filters={"parent": parent_name}) + 1,  # Row index
-        # }
-    
+            # # Prepare the row data
+            child_row = {
+                "name": child_row_name,
+                "parent": doc.sales_order,
+                "parentfield": "items",  # This should match the child table fieldname in the parent doctype
+                "parenttype": "Sales Order",
+                "doctype": "Sales Order Item",
+                "item_code": doc.production_item,
+                "item_name": frappe.db.get_value("Item",doc.production_item,"item_name"),
+                "qty": 1,
+                "serial_no": doc.custom_serial_no,
+                "conversion_factor":1,
+                "stock_uom":"Nos",
+                "uom": "Nos",
+                "rate": frappe.db.get_value(
+                            "Item Price",
+                            {"item_code": doc.production_item},
+                            "price_list_rate",
+                        ),
+                "idx": frappe.db.count("Sales Order Item", filters={"parent": doc.sales_order}) + 1,  # Row index
+            }
+        
         # # Insert the row into the child doctype table
-        # frappe.db.insert(child_row)
+        child_doc=frappe.get_doc(child_row)
+        child_doc.insert()
+        frappe.db.commit()
     
         # # Optionally, save changes to the parent document
-        # frappe.get_doc(parent_doctype, parent_name).save()
+        # frappe.get_doc("Sales Order", parent_name).save()
     
         # frappe.msgprint(f"Child row with item_code {item_code} inserted successfully into {child_doctype}.")
 

@@ -144,7 +144,7 @@ doc_events = {
 	},
     "Work Order":{
         "on_trash":"order_booking_custom.utils.delete_so_item",
-        # "validate":"order_booking_custom.utils.update_item_so"
+        "validate":"order_booking_custom.utils.update_item_so"
 
     }
 }
