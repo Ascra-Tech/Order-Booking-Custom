@@ -525,16 +525,16 @@ def create_material_issue(self,replaced_items):
 def delete_so_item(doc,method=None):
     if doc.production_item and doc.custom_serial_no and doc.sales_order:
         get_obf=frappe.get_doc("Order Booking Form",doc.custom_order_booking)
-        if len(get_obf.order_booking_details) == 1:
+        if len(get_obf.order_booking_details) > 0:
             frappe.db.delete("Sales Order", {"name": get_obf.sales_order})
             frappe.db.set_value("Order Booking Form",doc.custom_order_booking,"sales_order","")
-        else:
-            get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
-            frappe.log_error("get_item",get_item)
-            if get_item:
+        # else:
+        #     get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
+        #     frappe.log_error("get_item",get_item)
+        #     if get_item:
                 
-                frappe.db.delete("Sales Order Item", {"name": get_item})
-                frappe.db.commit()
+        #         frappe.db.delete("Sales Order Item", {"name": get_item})
+        #         frappe.db.commit()
     # Generate a unique name for the child row
 
 @frappe.whitelist()
