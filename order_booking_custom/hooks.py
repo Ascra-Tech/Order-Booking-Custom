@@ -140,8 +140,13 @@ app_license = "mit"
 doc_events = {
 	"Order Booking Form": {
 		"on_update_after_submit": ["order_booking_custom.update_serial_no_item.update_serial_no_on_item_change",
-                            "order_booking_custom.utils.update_stock_entry_ob","order_booking_custom.reverse_pr.create_reverse_pr"]
-	}
+                            "order_booking_custom.utils.update_stock_entry_ob"]
+	},
+    "Work Order":{
+        "on_trash":"order_booking_custom.utils.delete_so_item",
+        # "validate":"order_booking_custom.utils.update_item_so"
+
+    }
 }
 
 # Scheduled Tasks

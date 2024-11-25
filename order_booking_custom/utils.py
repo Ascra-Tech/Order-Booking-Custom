@@ -12,7 +12,7 @@ from frappe.utils import cint, cstr, flt, get_link_to_form
 import frappe
 
 @frappe.whitelist(allow_guest=True)
-def get_work_order_status(sales_order,item_code,serial_no):
+def get_work_order_status(sales_order,item_code,serial_no=None):
     # Initialize an empty dictionary to store item statuses
     work_order_status = {}
 
@@ -333,7 +333,7 @@ def make_work_orders(name=None, project=None):
 
     for i in items:
         try:
-            wo=frappe.db.get_value("Work Order",{"production_item":i.get("item_code"),"custom_order_booking":doc.name},"name")
+            wo=frappe.db.get_value("Work Order",{"production_item":i.get("item_code"),"custom_order_booking":doc.name,"custom_serial_no":i.get("tyre_serial_number")},"name")
             if not wo or frappe.db.get_value("Work Order",wo,"docstatus") == 2:
                 if not i.get("bom"):
                     frappe.throw(
@@ -512,12 +512,12 @@ def create_material_issue(self,replaced_items):
             "s_warehouse": frappe.db.get_value("Stock Entry Detail",{"item_code":item.item_code,"parent":self.stock_entry},"t_warehouse"),
             "allow_zero_valuation_rate":1,
             "conversion_factor":1,
-            # "serial_no":frappe.db.get_value("Stock Entry Detail",{"item_code":item.item_code,"parent":self.stock_entry},"serial_no")
+            "serial_no":frappe.db.get_value("Stock Entry Detail",{"item_code":item.item_code,"parent":self.stock_entry},"serial_no")
         })
 
     frappe.log_error("material_issue",material_issue.as_dict())
     material_issue.insert()
-    material_issue.submit()
+    # material_issue.submit()
     if material_issue.name:
         for item in replaced_items:
             row_name=frappe.db.get_value("Order Booking Details",{"item_code":item.item_code,"parent":self.name},"name")
@@ -525,3 +525,47 @@ def create_material_issue(self,replaced_items):
                 frappe.db.set_value("Order Booking Details",row_name,{"custom_stock_entry":material_issue.name})
         frappe.msgprint(f"Material Issue {material_issue.name} created.")
 
+@frappe.whitelist()
+def delete_so_item(doc,method=None):
+    if doc.production_item and doc.custom_serial_no and doc.sales_order:
+        get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
+        frappe.log_error("get_item",get_item)
+        if get_item:
+            
+            frappe.db.delete("Sales Order Item", {"name": get_item})
+            frappe.db.commit()
+    # Generate a unique name for the child row
+
+@frappe.whitelist()
+def update_item_so(doc,method=None):
+    if doc.production_item and doc.custom_serial_no and doc.sales_order:
+        get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
+        if not get_item:
+        # Generate a unique name for the child row
+            child_row_name = frappe.generate_hash(length=10)
+            frappe.log_error("child_row_name",child_row_name)
+        
+        # # Prepare the row data
+        # child_row = {
+        #     "name": child_row_name,
+        #     "parent": parent_name,
+        #     "parentfield": "items",  # This should match the child table fieldname in the parent doctype
+        #     "parenttype": parent_doctype,
+        #     "doctype": child_doctype,
+        #     "item_code": item_code,
+        #     "qty": qty,
+        #     "serial_no": serial_no,
+        #     "rate": rate,
+        #     "idx": frappe.db.count(child_doctype, filters={"parent": parent_name}) + 1,  # Row index
+        # }
+    
+        # # Insert the row into the child doctype table
+        # frappe.db.insert(child_row)
+    
+        # # Optionally, save changes to the parent document
+        # frappe.get_doc(parent_doctype, parent_name).save()
+    
+        # frappe.msgprint(f"Child row with item_code {item_code} inserted successfully into {child_doctype}.")
+
+        
+        
