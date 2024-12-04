@@ -269,4 +269,18 @@ fixtures = [
             ]
         ]
     ]},
+    {
+        "dt": "Custom Field",
+        "filters": [
+            [
+                "module",
+                "in",
+                [
+                    "Order Booking Custom",
+                ],
+            ]
+        ],
+    },
 ]
+
+
