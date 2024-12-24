@@ -1,0 +1,39 @@
+{
+ "add_total_row": 0,
+ "columns": [],
+ "creation": "2024-12-16 19:33:51.644648",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": "Eccotyre -Letter Head",
+ "letterhead": null,
+ "modified": "2024-12-16 19:33:51.644648",
+ "modified_by": "Administrator",
+ "module": "Order Booking Custom",
+ "name": "NAVI MUMBAI CUSTOMERWISE SALES REPORT",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Sales Order",
+ "report_name": "NAVI MUMBAI CUSTOMERWISE SALES REPORT",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Sales User"
+  },
+  {
+   "role": "Sales Manager"
+  },
+  {
+   "role": "Maintenance User"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Stock User"
+  }
+ ]
+}
