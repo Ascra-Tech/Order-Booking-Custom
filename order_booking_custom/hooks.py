@@ -281,6 +281,18 @@ fixtures = [
             ]
         ],
     },
+    {
+        "dt": "Property Setter",
+        "filters": [
+            [
+                "module",
+                "in",
+                [
+                    "Order Booking Custom",
+                ],
+            ]
+        ],
+    },
 ]
 
 
