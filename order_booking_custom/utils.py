@@ -421,6 +421,9 @@ def get_item_details(kwargs):
             item_dict["conversion_factor"] = 1
             item_dict["t_warehouse"] =item.get("target_warehouse_se")
             item_dict["serial_no"] = item.get("tyre_serial_number")
+            item_dict["branch"] = item.get("branch")
+            item_dict["item_group"] = item.get("item_group")
+            item_dict["sales_person"] = item.get("sales_person")
             item_dict["allow_zero_valuation_rate"]=1
             # frappe.db.get_value(
             #     "Item Default",
