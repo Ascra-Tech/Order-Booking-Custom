@@ -388,6 +388,7 @@ def make_stock_entry(doc):
                 "custom_order_booking": kwargs.get("name"),
                 "posting_date": nowdate(),
                 "posting_time": nowtime(),
+                "dealer_name" : kwargs.get("dealer_name"),
                 "items": get_item_details(kwargs),
             }
         )
@@ -471,6 +472,7 @@ def make_work_orders(name=None, project=None):
                         custom_serial_no=i.get("tyre_serial_number"),
                         branch=i.get("branch"),
                         item_group=i.get("item_group"),
+                        dealer_name= doc.get("dealer_name"),
                         sales_person=i.get("sales_person"),
                         custom_order_booking=doc.name,
                         wip_warehouse=i.get("wip_warehouse"),
