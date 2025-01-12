@@ -11,8 +11,8 @@ from frappe.utils import cint, cstr, flt, get_link_to_form
 def update_serial_nos(self,method=None):
     if self.items:
          for item in self.items:
-            if item.serial_no:
-                item.custom_serial_no=item.serial_no
+            if item.custom_work_order:
+                item.custom_serial_no=frappe.db.get_value("Work Order",item.custom_work_order,"custom_serial_no")
                 item.serial_no=""
 
 import frappe
@@ -29,6 +29,7 @@ def get_work_order_status(sales_order,item_code,serial_no=None):
         # Assuming there's a link between Sales Order item and Work Order, and Work Order has a status field
         # You may need to adjust this logic based on your data model
     work_order = frappe.db.get_value('Work Order', {'production_item': item_code, 'sales_order': sales_order,"custom_serial_no":serial_no}, 'status')
+    work_order_name = frappe.db.get_value('Work Order', {'production_item': item_code, 'sales_order': sales_order,"custom_serial_no":serial_no}, 'name')
     custom_serial_no = frappe.db.get_value('Work Order', {'production_item': item_code, 'sales_order': sales_order,"custom_serial_no":serial_no}, 'custom_serial_no')
     if work_order:
         work_order_status["item_code"] = item_code
@@ -36,12 +37,15 @@ def get_work_order_status(sales_order,item_code,serial_no=None):
         work_order_status["status"] = "Rejected" if work_order == "Closed" else work_order
         sales_order_item_name=frappe.db.get_value("Sales Order Item",{"item_code":item_code,"serial_no":serial_no},"name")
         frappe.db.set_value("Sales Order Item",sales_order_item_name,"custom_status","Rejected" if work_order == "Closed" else work_order)
+        frappe.db.set_value("Sales Order Item",sales_order_item_name,"custom_work_order",work_order_name)
+
     else:
         work_order_status["item_code"] = item_code
         work_order_status["serial_no"] = custom_serial_no
         work_order_status["status"] = "No Work Order"
         sales_order_item_name=frappe.db.get_value("Sales Order Item",{"item_code":item_code,"serial_no":serial_no},"name")
         frappe.db.set_value("Sales Order Item",sales_order_item_name,"custom_status","No Work Order")
+        frappe.db.set_value("Sales Order Item",sales_order_item_name,"custom_work_order",work_order_name)
 
     frappe.msgprint('Work order statuses updated successfully.')
         
