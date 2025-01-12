@@ -7,7 +7,13 @@ from frappe.utils import cint, cstr, flt, get_link_to_form
 
 
 
-
+@frappe.whitelist()
+def update_serial_nos(self,method=None):
+    if self.items:
+         for item in self.items:
+            if item.serial_no:
+                item.custom_serial_no=item.serial_no
+                item.serial_no=""
 
 import frappe
 

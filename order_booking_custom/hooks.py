@@ -5,6 +5,11 @@ app_description = "Order Booking Custom"
 app_email = "satya@gmail.com"
 app_license = "mit"
 
+
+from erpnext.stock.serial_batch_bundle import SerialBatchBundle
+from order_booking_custom.override import validate_item
+SerialBatchBundle.validate_item= validate_item
+
 # Apps
 # ------------------
 
@@ -147,8 +152,13 @@ doc_events = {
         "before_cancel":"order_booking_custom.reverse_pr.cancel_trash_pr"
         # "after_insert":"order_booking_custom.utils.update_item_so"
 
+    },
+    "Delivery Note":{
+        "before_save":"order_booking_custom.utils.update_serial_nos"
     }
 }
+
+
 
 # Scheduled Tasks
 # ---------------
