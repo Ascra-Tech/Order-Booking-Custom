@@ -12,10 +12,7 @@ def execute(filters=None):
     # Define columns
     columns = get_columns()
 
-    # Define chart data
-    chart = get_chart_data(data)
-
-    return columns, data, chart
+    return columns, data
 
 def get_columns():
     return [
@@ -24,7 +21,7 @@ def get_columns():
         {"label": _("Dealer Name"), "fieldname": "dealer_name", "fieldtype": "Data", "width": 150},
         {"label": _("Segment"), "fieldname": "segment", "fieldtype": "Data", "width": 100},
         {"label": _("Voucher Type"), "fieldname": "voucher_type", "fieldtype": "Data", "width": 100},
-        {"label": _("Actual Quantity"), "fieldname": "actual_qty", "fieldtype": "Float", "width": 120,"hidden":1},
+        {"label": _("Actual Quantity"), "fieldname": "actual_qty", "fieldtype": "Float", "width": 120},
         {"label": _("Rejected Quantity"), "fieldname": "rejected_qty", "fieldtype": "Float", "width": 120},
         {"label": _("Invoice Amount"), "fieldname": "invoice_amount", "fieldtype": "Currency", "width": 150},
         {"label": _("Collection"), "fieldname": "collection", "fieldtype": "Currency", "width": 150},
@@ -54,7 +51,7 @@ def get_sales_data(filters):
         GROUP BY
             soi.branch, soi.sales_person, so.dealer_name, so.order_type, soi.item_group
         ORDER BY
-            so.dealer_name
+            soi.item_group
     """.format(conditions=conditions)
 
     # Fetch data
@@ -63,7 +60,7 @@ def get_sales_data(filters):
     # Calculate totals
     if data:
         total_row = {
-            "location": "Mumbai Total",
+            "location": "Total",
             "sales_person": "",
             "dealer_name": "",
             "voucher_type": "",
@@ -93,32 +90,3 @@ def get_conditions(filters):
         conditions.append("soi.item_group = %(segment)s")
 
     return " AND ".join(conditions)
-
-def get_chart_data(data):
-    # Prepare chart data
-    dealer_names = [row['dealer_name'] for row in data if row.get('dealer_name')]
-    invoice_amounts = [row['inv_amount'] for row in data if row.get('inv_amount')]
-
-    # Chart configuration
-    chart = {
-        'type': 'bar',  # Bar chart type
-        'data': {
-            'labels': dealer_names,  # X-axis labels (Dealer Name)
-            'datasets': [{
-                'name': 'Invoice Amount',
-                'values': invoice_amounts  # Y-axis values (Invoice Amount)
-            }]
-        },
-        'options': {
-            'axisOptions': {
-                'xAxis': {
-                    'title': _('Dealer Name')
-                },
-                'yAxis': {
-                    'title': _('Invoice Amount'),
-                    'isNumeric': True
-                }
-            }
-        }
-    }
-    return chart
