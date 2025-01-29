@@ -1,5 +1,6 @@
-// Copyright (c) 2024, satya and contributors
+// Copyright (c) 2024, Satya and contributors
 // For license information, please see license.txt
+
 frappe.query_reports["CUSTOMERWISE SALES REPORT"] = {
     "filters": [
         {
@@ -7,21 +8,30 @@ frappe.query_reports["CUSTOMERWISE SALES REPORT"] = {
             "label": __("Location"),
             "fieldtype": "Link",
             "options": "Branch",
-            "default": ""
         },
         {
             "fieldname": "sales_person",
             "label": __("Sales Person"),
             "fieldtype": "Link",
             "options": "Sales Person",
-            "default": ""
         },
         {
             "fieldname": "party_name",
             "label": __("Party Name"),
             "fieldtype": "Link",
             "options": "Customer",
-            "default": ""
+        },
+        {
+            "fieldname": "from_date",
+            "label": __("From Date"),
+            "fieldtype": "Date",
+            "default": frappe.datetime.add_days(frappe.datetime.nowdate(), -30)
+        },
+        {
+            "fieldname": "to_date",
+            "label": __("To Date"),
+            "fieldtype": "Date",
+            "default": frappe.datetime.nowdate()
         }
     ]
 };
