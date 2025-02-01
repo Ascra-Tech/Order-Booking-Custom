@@ -42,6 +42,8 @@ def get_report_data(filters):
         conditions += " AND soi.branch = %(location)s"
     if filters.get("sales_person"):
         conditions += " AND soi.sales_person = %(sales_person)s"
+    if filters.get("dealer_name"):
+        conditions += " AND so.dealer_name = %(dealer_name)s"
     if filters.get("party_name"):
         conditions += " AND so.customer = %(party_name)s"
     if filters.get("from_date"):
@@ -111,14 +113,14 @@ def format_report_data(report_data):
 
 def get_subtotal_row(label, totals, is_final_total=False):
     """Creates a subtotal/total row dynamically with different background colors."""
-    bg_color = "#FFD700" if is_final_total else "#ADD8E6"  # Gold for Final Total, Light Blue for Subtotal
+    bg_color = "#FFD700" if is_final_total else "#6cfb27"  # Gold for Final Total, Light Blue for Subtotal
 
     return {
         "location": f"<b style='background-color:{bg_color}; padding:5px;'>{label}</b>",
         "sales_person": " ",
         "dealer_name": " ",
         "party_name": " ",
-        "actual_qty": f"<b style='background-color:{bg_color}; padding:5px;'>{totals['actual_qty']}</b>",
-        "unit_qty": f"<b style='background-color:{bg_color}; padding:5px;'>{totals['unit_qty']}</b>",
-        "reject": f"<b style='background-color:{bg_color}; padding:5px;'>{totals['reject']}</b>",
+        "actual_qty": totals['actual_qty'],
+        "unit_qty": totals['unit_qty'],
+        "reject": totals['reject'],
     }

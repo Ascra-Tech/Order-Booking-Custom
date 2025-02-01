@@ -16,6 +16,12 @@ frappe.query_reports["CUSTOMERWISE SALES REPORT"] = {
             "options": "Sales Person",
         },
         {
+            "fieldname": "dealer_name",
+            "label": __("Dealer Name"),
+            "fieldtype": "Link",
+            "options": "Sales Partner",
+        },
+        {
             "fieldname": "party_name",
             "label": __("Party Name"),
             "fieldtype": "Link",
