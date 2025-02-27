@@ -114,7 +114,7 @@ def create_serial_no(self, method=None):
 def create_purchase_order(name=None):
     try:
         # create_stock_entry(name)
-        make_purchase_order(source_name=name, target_doc=None)
+        # make_purchase_order(source_name=name, target_doc=None)
         create_work_order(name)
     except Exception as e:
         frappe.log_error("Exception",e)
@@ -142,6 +142,7 @@ def make_purchase_order(source_name: str, target_doc=None):
 
 def _make_purchase_order(source_name, target_doc=None, ignore_permissions=False):
     if not frappe.db.get_value("Order Booking Form", source_name, "custom_purchase_order"):
+        frappe.msgprint(source_name)
 
         def set_missing_values(source, target):
             target.supplier = source.custom_supplier
@@ -152,7 +153,7 @@ def _make_purchase_order(source_name, target_doc=None, ignore_permissions=False)
             target.run_method("calculate_taxes_and_totals")
 
         def update_item(obj, target, source_parent):
-            target.rate = frappe.db.get_value("Item Price",{"item_code":obj.item_code,"supplier":source_parent.custom_supplier},"price_list_rate")
+            target.rate =obj.item_rate #frappe.db.get_value("Item Price",{"item_code":obj.item_code,"supplier":source_parent.custom_supplier},"price_list_rate")
             frappe.log_error("tyre_serial_number",obj.tyre_serial_number)
             target.custom_serial_no=obj.tyre_serial_number
 
@@ -172,8 +173,7 @@ def _make_purchase_order(source_name, target_doc=None, ignore_permissions=False)
                         "item_group":"item_group",
                         "sales_person":"sales_person",
                         "item_code": "item_code", 
-                        "qty": 1,
-                        "serial_no":"tyre_serial_number"
+                        "qty": 1
                         },
                     "postprocess": update_item,
                 },
@@ -183,7 +183,6 @@ def _make_purchase_order(source_name, target_doc=None, ignore_permissions=False)
             set_missing_values,
             ignore_permissions=ignore_permissions,
         )
-        frappe.log_error("doclist", doclist.as_dict())
         doclist.insert()
         doclist.submit()
         if doclist.name:
@@ -193,7 +192,7 @@ def _make_purchase_order(source_name, target_doc=None, ignore_permissions=False)
             create_work_order(name=source_name)
             receipt_name=make_purchase_receipt(source_name=doclist.name,target_doc=None)
             
-            make_purchase_invoice(receipt_name)
+            # make_purchase_invoice(receipt_name)
             frappe.msgprint(f"Purchase Order Order Created Successfully {doclist.name}")
             
         return doclist
@@ -201,7 +200,7 @@ def _make_purchase_order(source_name, target_doc=None, ignore_permissions=False)
         frappe.msgprint(
             f"Purchase Order Already Created {frappe.db.get_value('Order Booking Form',source_name,'custom_purchase_order')}"
         )
-
+import random
 from erpnext.stock.doctype.purchase_receipt.purchase_receipt import get_returned_qty_map
 from erpnext.stock.doctype.purchase_receipt.purchase_receipt import get_invoiced_qty_map
 from erpnext.controllers.accounts_controller import merge_taxes
@@ -219,6 +218,11 @@ def make_purchase_invoice(source_name, target_doc=None, args=None):
 
 		doc = frappe.get_doc(target)
 		doc.payment_terms_template = get_payment_terms_template(source.supplier, "Supplier", source.company)
+		
+
+		number = random.randint(1000, 9999)
+
+		doc.bill_no=number
 		doc.run_method("onload")
 		doc.run_method("set_missing_values")
 
@@ -347,7 +351,7 @@ def make_purchase_receipt(source_name, target_doc=None):
 					"sales_order": "sales_order",
 					"sales_order_item": "sales_order_item",
 					"wip_composite_asset": "wip_composite_asset",
-                    "serial_no":"serial_no"
+                    "custom_serial_no":"custom_serial_no"
 				},
 				"postprocess": update_item,
 				"condition": lambda doc: abs(doc.received_qty) < abs(doc.qty)
@@ -466,8 +470,6 @@ def make_work_orders(name=None, project=None):
                     frappe.throw(
                         _("Please select BOM against item {0}").format(i.get("item_code"))
                     )
-                # if not i.get("pending_qty"):
-                # 	frappe.throw(_("Please select Qty against item {0}").format(i.get("item_code")))
 
                 work_order = frappe.get_doc(
                     dict(
@@ -515,10 +517,9 @@ def make_work_orders(name=None, project=None):
     frappe.db.set_value(
         "Order Booking Form", name, "work_order", str([p.name for p in out])
     )
-    # frappe.msgprint("Work Orders Created")
+
     if out:
         process_work_orders(out)
-    # frappe.db.commit()
     return [p.name for p in out]
 
 
@@ -526,12 +527,64 @@ def process_work_orders(out):
     for p in out:
         try:
             doc = frappe.get_doc("Work Order", p.name)
-            doc.submit()
+            create_stock_receipt(doc)
+            # doc.submit()
         except Exception as e:
-            # Log the error and optionally perform rollback if necessary
             frappe.log_error(f"Error Response from Work Order {p.name}  ", str(e))
-            # # Raise the exception to indicate failure
-            # raise e
+
+
+
+
+
+def create_stock_receipt(work_order):
+    frappe.log_error("work_order",work_order.as_dict())
+    """Create a Stock Receipt entry on Work Order draft creation."""
+    stock_entry = frappe.get_doc({
+        "doctype": "Stock Entry",
+        "stock_entry_type": "Material Receipt",
+        "company": work_order.company,
+        "items": [
+            {
+                "item_code": work_order.production_item,
+                "qty": 1,
+                "t_warehouse": work_order.fg_warehouse,
+                "serial_no": work_order.custom_serial_no
+            }
+        ]
+    })
+    stock_entry.insert()
+    stock_entry.submit()
+    frappe.db.set_value("Work Order", work_order.name, "custom_stock_receipt", stock_entry.name)
+
+
+
+@frappe.whitelist()
+def on_work_order_cancel(doc, method=None):
+    """Cancel Stock Receipt when Work Order is canceled."""
+    stock_receipt = frappe.db.get_value("Work Order", doc.name, "custom_stock_receipt")
+    if stock_receipt:
+        stock_entry = frappe.get_doc("Stock Entry", stock_receipt)
+        stock_entry.cancel()
+        frappe.db.set_value("Work Order", doc.name, "custom_stock_receipt", None)
+
+
+# @frappe.whitelist()
+def on_work_order_delete(doc, method=None):
+    """Delete Stock Receipt when Work Order is deleted."""
+    stock_receipt = frappe.db.get_value("Work Order", doc.name, "custom_stock_receipt")
+    if stock_receipt:
+        stock_entry = frappe.get_doc("Stock Entry", stock_receipt)
+        stock_entry.cancel()
+        frappe.delete_doc("Stock Entry", stock_receipt)
+        frappe.db.set_value("Work Order", doc.name, "custom_stock_receipt", None)
+
+
+
+
+
+
+
+
 
 
 @frappe.whitelist()
@@ -666,25 +719,11 @@ def delete_so_item(doc,method=None):
             frappe.db.delete("Sales Order", {"name": get_obf.sales_order})
             frappe.db.set_value("Order Booking Form",doc.custom_order_booking,"sales_order","")
 
-            
-        # else:
-        #     get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
-        #     frappe.log_error("get_item",get_item)
-        #     if get_item:
-                
-        #         frappe.db.delete("Sales Order Item", {"name": get_item})
-        #         frappe.db.commit()
-    # Generate a unique name for the child row
+
 
 @frappe.whitelist()
 def update_item_so(doc,method=None):
     if doc.production_item and doc.custom_serial_no and doc.sales_order and not doc.is_new():
-        # get_obf=frappe.get_doc("Order Booking Form",doc.custom_order_booking_form)
-        # if len(get_obf.order_booking_details) == 1:
-        #     frappe.db.delete("Sales Order", {"name": get_obf.sales_order})
-        #     frappe.db.set_value("Order Booking Form",doc.custom_order_booking_form,"sales_order","")
-        
-        # else:
         get_item=frappe.db.get_value("Sales Order Item",{"item_code":doc.production_item,"serial_no":doc.custom_serial_no,"parent":doc.sales_order},"name")
         if not get_item:
         # Generate a unique name for the child row
@@ -717,11 +756,70 @@ def update_item_so(doc,method=None):
             child_doc=frappe.get_doc(child_row)
             child_doc.insert()
             frappe.db.commit()
-    
-        # # Optionally, save changes to the parent document
-        # frappe.get_doc("Sales Order", parent_name).save()
-    
-        # frappe.msgprint(f"Child row with item_code {item_code} inserted successfully into {child_doctype}.")
 
-        
-        
+
+
+#make Purchase Invoice from order bOOking
+import frappe
+from frappe.model.mapper import get_mapped_doc
+
+@frappe.whitelist()
+def make_purchase_invoice_from_order_booking(source_name, target_doc=None):
+    # Check if a purchase invoice is already created
+    existing_invoice = frappe.db.get_value("Order Booking Form", source_name, "custom_purchase_invoice")
+    if existing_invoice:
+        frappe.msgprint(f"Purchase Invoice already exists: {existing_invoice}")
+        return existing_invoice
+
+    def set_missing_values(source, target):
+        target.supplier = source.custom_supplier
+        target.bill_date = source.delivery_date
+        target.bill_no = random.randint(1000, 9999)
+        target.posting_date = frappe.utils.nowdate()
+        target.run_method("set_missing_values")
+        target.run_method("calculate_taxes_and_totals")
+
+    def update_item(source_doc, target_doc, source_parent):
+        target_doc.qty = 1
+        target_doc.rate = float(source_doc.item_rate) if source_doc.item_rate else 0
+        target_doc.amount = 1 * target_doc.rate
+        target_doc.custom_serial_no = source_doc.tyre_serial_number
+
+
+    # Mapping Order Booking Form to Purchase Invoice
+    doclist = get_mapped_doc(
+        "Order Booking Form",
+        source_name,
+        {
+            "Order Booking Form": {
+                "doctype": "Purchase Invoice",
+            },
+            "Order Booking Details": {
+                "doctype": "Purchase Invoice Item",
+                "field_map": {
+                    "item_code": "item_code",
+                    "qty": "qty",
+                    "item_rate": "rate",
+                    "branch": "branch",
+                    "item_group": "item_group",
+                    "sales_person": "sales_person",
+                },
+                "postprocess": update_item,
+            },
+            "Purchase Taxes and Charges": {"add_if_empty": True},
+        },
+        target_doc,
+        set_missing_values,
+    )
+
+    # Insert and Submit Purchase Invoice
+    doclist.flags.ignore_mandatory= True
+    doclist.insert()
+    # doclist.submit()
+
+    # Link the Purchase Invoice to the Order Booking Form
+    frappe.db.set_value("Order Booking Form", source_name, "custom_purchase_invoice", doclist.name)
+
+    frappe.msgprint(f"Purchase Invoice Created Successfully: {doclist.name}")
+
+    return doclist.name
