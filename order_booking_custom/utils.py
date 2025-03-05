@@ -543,12 +543,15 @@ def create_stock_receipt(work_order):
         "doctype": "Stock Entry",
         "stock_entry_type": "Material Receipt",
         "company": work_order.company,
+        "work_order":work_order.name,
+        "custom_order_booking":work_order.custom_order_booking,
         "items": [
             {
                 "item_code": work_order.production_item,
                 "qty": 1,
                 "t_warehouse": work_order.fg_warehouse,
-                "serial_no": work_order.custom_serial_no
+                "serial_no": work_order.custom_serial_no,
+                "basic_rate":frappe.db.get_value("Order Booking Details",{"item_code":work_order.production_item,"parent":work_order.custom_order_booking,"tyre_serial_number":work_order.custom_serial_no},"item_rate")
             }
         ]
     })
